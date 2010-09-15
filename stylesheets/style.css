@@ -1,0 +1,50 @@
+body {
+  margin:0;
+  padding:0;
+  color:Gray;
+  background-color:Black;
+  background-image:url('/images/sky.jpg');
+}
+
+
+#container {
+  width:100%;
+  height:100%;
+}
+#ship {
+  position:absolute;
+  width:10%;
+  height:10%;
+}
+#shipimg {
+  width:100%; 
+  height:100%;
+}
+
+
+.bullet {
+  position:absolute;
+  /*background-color:Black;*/
+}
+.answer {
+  position:absolute;
+  background-color:#CEF6F5;
+  text-align:center;
+  /*background-image: url('/images/answerbox.png');*/
+}
+.bulletimg {
+  width:100%; 
+  height:100%;
+}
+
+
+/*This hides text selection */
+::-moz-selection {
+    background-color:Transparent;
+    color:#000;
+}
+::selection {
+    background-color:Transparent;
+    color:#000;
+}
+
