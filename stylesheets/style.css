@@ -1,7 +1,8 @@
 body {
   margin:0;
   padding:0;
-  color:Gray;
+  color:White;
+  font-family:Arial,Helvetica,sans-serif;
   background-color:Black;
   background-image:url('/images/sky.jpg');
 }
@@ -29,6 +30,7 @@ body {
 .answer {
   position:absolute;
   background-color:#CEF6F5;
+  color:Black;
   text-align:center;
   /*background-image: url('/images/answerbox.png');*/
 }

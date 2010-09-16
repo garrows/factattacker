@@ -92,6 +92,8 @@ function gotQuestionCallback(data) {
       //Set its style properties
       $(answer.id).css({"left": answer.x, "top":answer.y, "width":answer.width, "height":answer.height, "font-size":answer.height});    
       $(answer.id).css({"font-size":($(answer.id).height() *0.8)}); //With maths, this can me moved to previous line
+      //TODO:move this to a more meaningfull place
+      $('body').css({"font-size":($(answer.id).height() *0.8)});       
       
       //Handles movement
       answer.answerTick = function() {
@@ -132,6 +134,8 @@ function gotQuestionCallback(data) {
 
 //Called on mouse click
 function fireBullet(e) {
+  tmp = new Date();
+  $("#score5").text("FIRED!!!!" + tmp.getTime());
   //Stops extra bullets
   if (bullets.length >= maxBullets) { return false; }
   
@@ -148,7 +152,7 @@ function fireBullet(e) {
   bullet.width = bulletWidth;
   bullet.height = bulletHeight;
   bullet.heightInPx = percentToPixelsY(bulletHeight);
-  bullet.x = e.pageX - (percentToPixels(bulletWidth) / 2);
+  bullet.x = ($("#ship").position().left + ($("#ship").width() / 2))- (percentToPixels(bulletWidth) / 2);
   windowHeight = $(window).height();
   bullet.y = windowHeight - (windowHeight * toPercent(bulletHeight));
   
@@ -187,7 +191,7 @@ function gameTicker() {
    clearTimeout(gameTickerThread);
    //Move all bullets
    for (i = 0; i < bullets.length; i++) {
-      if (bullets[i].bulletTick() == false) {
+      if (bullets[i].doomed || bullets[i].bulletTick() == false) {
          //removes finished bullet
          bullets.splice(i,1); //TODO: Fix this so it actually removes it
          i--;
@@ -225,6 +229,7 @@ function gameTicker() {
           //Fade out all answers. Then remove them.
           $('.answer').stop().fadeOut('fast', function () { $(this).remove(); });
           $(bullet.hashedid).remove();
+          bullet.doomed = true;
           if (answer.correct) {
              $("#container").css({"background-color": "green" }); //Cleared later
              answerSpeed = answerSpeed - (answerSpeed * 0.05);
@@ -232,7 +237,7 @@ function gameTicker() {
              $("#container").css({"background-color": "red" }); //Cleared later
              answerSpeed = answerSpeed + (answerSpeed *0.05);
           }
-          $("#score").text("Speed: " + answerSpeed);
+          $("#score").text("Speed: " + answerSpeed.toFixed());
           questionRequired = true;
        }
    }
@@ -274,18 +279,38 @@ function percentToPixelsY(per) {
   return ($(window).height() * dec);
 }
 
+var lastevent = "";
 function touchHandler(event)
 {
     var touches = event.changedTouches,
     first = touches[0],
     type = "";
-     switch(event.type)
+    var d = new Date();
+    //$("#score").text(event.type);
+    switch(event.type)
     {
-       case "touchstart": type = "mousedown"; break;
-       case "touchmove":  type="mousemove"; break;        
-       case "touchend":   type="mouseup"; break;
-       default: return;
+       case "touchstart": 
+          type = "mousedown"; 
+		  $("#score2").text("touchstart " + d.getTime());
+          break;
+       case "touchmove":  
+	      type="mousemove"; 
+		  $("#score3").text("touchmove " + d.getTime());
+		  break;        
+       case "touchend":   
+          type="mouseup"; 
+		  $("#score4").text("touchend " + d.getTime());
+          //$("#score").text((d.getTime()-lastTouchStart.getTime())/(1000));
+          if (lastevent == "touchstart") {
+            type="click";
+            $("#score").text("CLICK");
+          }          
+          break;
+       default: 
+	      $("#score5").text(event.type + " " + d.getTime());
+	      return;
     }
+	lastevent = event.type;
 
          //initMouseEvent(type, canBubble, cancelable, view, clickCount, 
          //           screenX, screenY, clientX, clientY, ctrlKey, 
