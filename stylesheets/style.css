@@ -21,6 +21,9 @@ body {
   width:100%; 
   height:100%;
 }
+#preloadbullet {
+  visibility:hidden;
+}
 
 
 .bullet {
@@ -29,9 +32,10 @@ body {
 }
 .answer {
   position:absolute;
-  background-color:#CEF6F5;
+  color:White;
+  /*background-color:#CEF6F5;
   color:Black;
-  text-align:center;
+  text-align:center;*/
   /*background-image: url('/images/answerbox.png');*/
 }
 .bulletimg {

@@ -78,7 +78,7 @@ function gotQuestionCallback(data) {
       answer.direction = direction;
       answer.y = Math.random() * ($(window).height()*.8);
       answer.x = Math.random() * $(window).width();
-      answer.width = answerWidth;
+      //answer.width = answerWidth;
       answer.height = answerHeight;
       answer.speed = (i+1)*answerSpeed; //Miliseconds from between sides
       answer.d = new Date();
@@ -90,11 +90,13 @@ function gotQuestionCallback(data) {
       $(document.body).append('<div class="answer" id='+answer.unhashedid+'>' + answer.answer + '</div>');
       
       //Set its style properties
-      $(answer.id).css({"left": answer.x, "top":answer.y, "width":answer.width, "height":answer.height, "font-size":answer.height});    
+      //$(answer.id).css({"left": answer.x, "top":answer.y, "width":answer.width, "height":answer.height, "font-size":answer.height});    
+	  $(answer.id).css({"left": answer.x, "top":answer.y, "height":answer.height, "font-size":answer.height});    
       $(answer.id).css({"font-size":($(answer.id).height() *0.8)}); //With maths, this can me moved to previous line
       //TODO:move this to a more meaningfull place
       $('body').css({"font-size":($(answer.id).height() *0.8)});       
-      
+      answer.width = $(answer.id).width();
+	  
       //Handles movement
       answer.answerTick = function() {
         this.d = new Date();
@@ -105,7 +107,7 @@ function gotQuestionCallback(data) {
            this.x = $(window).width() * (this.perc); 
            
            //Handles turn around
-           if (this.x + answerWidthInPx >= $(window).width()) { 
+           if (this.x + $(answer.id).width()+2 >= $(window).width() || this.perc >= 0.99) { 
               this.direction = '1'; 
               this.startTime = this.d.getTime();
               this.endTime = this.startTime + this.speed;
@@ -113,7 +115,7 @@ function gotQuestionCallback(data) {
         } else { //heading left
            //Convert percent to pixels
            this.x = $(window).width() * (1-this.perc); 
-           this.x = this.x - answerWidthInPx;
+           this.x = this.x - $(answer.id).width();
            
            //Handles turn around
            if (this.x <= 0) { 
@@ -215,7 +217,8 @@ function gameTicker() {
              //Detect collision
              t_x = [bullet.x, bullet.x + (ww * toPercent(bullet.width))];
              t_y = [bullet.y, bullet.y + (wh * toPercent(bullet.height))];
-             i_x = [answer.x, answer.x + (ww * toPercent(answer.width))]
+             //i_x = [answer.x, answer.x + (ww * toPercent(answer.width))]
+			 i_x = [answer.x, answer.x + answer.width]
              i_y = [answer.y, answer.y + (wh * toPercent(answer.height))];
              if ( t_x[0] < i_x[1] && t_x[1] > i_x[0] &&
                 t_y[0] < i_y[1] && t_y[1] > i_y[0]) {
