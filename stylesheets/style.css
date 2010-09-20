@@ -22,7 +22,7 @@ body {
   height:100%;
 }
 #preloadbullet {
-  visibility:hidden;
+  display:none;
 }
 
 
@@ -44,13 +44,13 @@ body {
 }
 
 
-/*This hides text selection */
+/*This hides text highlighting */
 ::-moz-selection {
     background-color:Transparent;
-    color:#000;
+    color:#FFFFFF;
 }
 ::selection {
     background-color:Transparent;
-    color:#000;
+    color:#FFFFFF;
 }
 

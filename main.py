@@ -50,10 +50,15 @@ class GetQuestion(webapp.RequestHandler):
       
       qs = [
          ["What is the capital of England?", ["London", "Sydney", "Brisbane" ]],
-         ["What is the Roman numeral for five?", ["V", "I", "X", "M"]],
+		 ["What is the capital of Australia?", ["Canberra", "Sydney", "Brisbane" ]],
+         ["What does a hygrometer measure?", ["Humidity", "Earthquakes", "Pressure"]],
+		 ["Who lives in a trash can on Sesame Street?", ["Oscar", "Elmo", "Cookie Monster"]],
+		 ["What farm animal gives us milk to drink?", ["Cow", "Chicken", "Horse", "Dog"]],
+		 ["What animal is pink and has a curly tail?", ["Pig", "Cat", "Horse", "Cow"]],
+		 ["What vehicle runs on a track and blows a whistle?", ["Train", "Airplane", "Helicopter", "Car"]],
          ["What color is a lemon?", ["Yellow", "Orange", "Red", "Blue", "Green"]]
       ]
-      i = random.randint(0, 2)
+      i = random.randint(0, 7)
       question = SimpleQuestion()
       question.id = 0
       question.question = qs[i][0]

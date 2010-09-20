@@ -5,16 +5,29 @@ var answerWidth = '10%';   //Answer width. Subject to powerups.
 var answerHeight = '5%';   //Answer height. Subject to powerups.
 var answerSpeed = 2500;    //miliseconds from side to side. Also multiplied.
 var bulletWidth = '3%';    //Bullet width. Subject to powerups.
-var bulletHeight = '5%';  //Bullet height. Subject to powerups.
+var bulletHeight = '5%';   //Bullet height. Subject to powerups.
 var bulletSpeed = 1500;    //miliseconds from bottom to top
 var gameTickerThread;      //Timeout for game (bullet/answer/question) handler
 var gameTickerSpeed = 5;   //miliseconds
 var questionRequired = true; //Set to false and a new question is added.
 var bulletImage = 'images/egg3.gif';
+var lastTouchEvent = "";        //Last touch event called
+var left = false;               //True if key is pressed. 
+var right = false;              //True if key is pressed. 
+var up = false;                 //True if key is pressed. 
+var down = false;               //True if key is pressed. 
+var keyboardMoveSize = 3;       //Moves x pixels per gameLoop.
+var shipSpeed = 5;              //Can update ship every x ms. 
+var lastMove = (new Date()).getTime();
 
-//Main function
+//Startup function
 $(document).ready(function () {
-  touchInit();
+
+  /* Setup keyboard event handlers */
+  setupKeyEvents();
+  
+  /* Setup iPhone touch events */
+  addTouchEvents();  
 
   /* Handle resize if window does */
   $(window).resize(function () {
@@ -23,14 +36,7 @@ $(document).ready(function () {
   
   /* Make ship follow the mouse */
   $(document).mousemove(function (e) {
-    s = $("#ship");
-    x = (e.pageX - (s.width() / 2));
-    if (x + s.width() >= $(window).width()) {
-       x = $(window).width() - s.width();
-    } else if (x < 0) {
-       x = 0;
-    }
-    s.css({"left": x + "px" });
+    moveShipTo(e.pageX);
   });
   
   /*Make the ship fire on click */
@@ -107,7 +113,7 @@ function gotQuestionCallback(data) {
            this.x = $(window).width() * (this.perc); 
            
            //Handles turn around
-           if (this.x + $(answer.id).width()+2 >= $(window).width() || this.perc >= 0.99) { 
+           if (this.x + $(this.id).width() + 5 > $(window).width()) { 
               this.direction = '1'; 
               this.startTime = this.d.getTime();
               this.endTime = this.startTime + this.speed;
@@ -115,7 +121,7 @@ function gotQuestionCallback(data) {
         } else { //heading left
            //Convert percent to pixels
            this.x = $(window).width() * (1-this.perc); 
-           this.x = this.x - $(answer.id).width();
+           this.x = this.x - $(this.id).width();
            
            //Handles turn around
            if (this.x <= 0) { 
@@ -137,7 +143,6 @@ function gotQuestionCallback(data) {
 //Called on mouse click
 function fireBullet(e) {
   tmp = new Date();
-  $("#score5").text("FIRED!!!!" + tmp.getTime());
   //Stops extra bullets
   if (bullets.length >= maxBullets) { return false; }
   
@@ -154,7 +159,7 @@ function fireBullet(e) {
   bullet.width = bulletWidth;
   bullet.height = bulletHeight;
   bullet.heightInPx = percentToPixelsY(bulletHeight);
-  bullet.x = ($("#ship").position().left + ($("#ship").width() / 2))- (percentToPixels(bulletWidth) / 2);
+  bullet.x = ($("#ship").position().left + ($("#ship").width() / 2))- (percentToPixelsX(bulletWidth) / 2);
   windowHeight = $(window).height();
   bullet.y = windowHeight - (windowHeight * toPercent(bulletHeight));
   
@@ -191,6 +196,9 @@ function fireBullet(e) {
 //Like a OnPaint method
 function gameTicker() {
    clearTimeout(gameTickerThread);
+   
+   checkKeyboard();
+   
    //Move all bullets
    for (i = 0; i < bullets.length; i++) {
       if (bullets[i].doomed || bullets[i].bulletTick() == false) {
@@ -248,7 +256,36 @@ function gameTicker() {
    //Checks if a question is needed (no answers remain in DOM).
    if ($('.answer').length == 0 && questionRequired) {askQuestion();}
    
+   //Setup timed loop.
    gameTickerThread = setTimeout("gameTicker()",gameTickerSpeed);
+}
+
+//Moves ship to x pixels. 
+function moveShipLeft(x) {
+  s = $("#ship");
+  newx = s.position().left + (s.width() / 2) - x;
+  moveShipTo(newx);
+}
+function moveShipRight(x) {
+  s = $("#ship");
+  newx = s.position().left + (s.width() / 2) + x;
+  moveShipTo(newx);
+}
+function moveShipTo(x) {
+  var dd = new Date();
+  var diff = dd.getTime() - lastMove;
+  //helps smoothness and keyboard controlls
+  if (diff/(shipSpeed) > 1) {
+    s = $("#ship");
+    x = (x - (s.width() / 2));
+    if (x + s.width() >= $(window).width()) {
+       x = $(window).width() - s.width();
+    } else if (x < 0) {
+       x = 0;
+    }
+    s.css({"left": x + "px" });
+    lastMove = dd.getTime();
+  }
 }
 
 //Called when window resizes
@@ -258,7 +295,7 @@ function handleResize() {
       "top": $(window).height() - $("#ship").height() 
     }
   );
-  answerWidthInPx = percentToPixels(answerWidth);
+  answerWidthInPx = percentToPixelsX(answerWidth);
   //TODO: recalculate the font sizes and change all the font styles
 }
 
@@ -273,7 +310,7 @@ function toPercent(per) {
 }
 
 //Converts percent string to pixels relative to window size. 
-function percentToPixels(per) {
+function percentToPixelsX(per) {
   dec = toPercent(per);
   return ($(window).width() * dec);
 }
@@ -282,57 +319,79 @@ function percentToPixelsY(per) {
   return ($(window).height() * dec);
 }
 
-var lastevent = "";
-function touchHandler(event)
-{
-    var touches = event.changedTouches,
-    first = touches[0],
-    type = "";
-    var d = new Date();
-    //$("#score").text(event.type);
-    switch(event.type)
+//Masks iPhone touch events as mouse events.
+function touchHandler(event) {
+  //Gets the touch event
+  var touches = event.changedTouches,
+      first = touches[0],
+      type = "";
+  switch(event.type)
+  {
+     case "touchstart": type = "mousedown"; break;
+     case "touchmove":  type="mousemove";   break;        
+     case "touchend":   
+        type="mouseup"; 
+        //click event if its a tap. 
+        if (lastTouchEvent == "touchstart") {
+          type="click";
+        }
+        break;
+     default: return;
+  }
+  //Used for determining taps
+  lastTouchEvent = event.type;
+  //Create the mouseEvent and raise it.
+  var simulatedEvent = document.createEvent("MouseEvent");
+  simulatedEvent.initMouseEvent(type, true, true, window, 1, 
+                                first.screenX, first.screenY, 
+                                first.clientX, first.clientY, false, 
+                                false, false, false, 0/*left*/, null);
+
+  first.target.dispatchEvent(simulatedEvent);
+  //Turns off the default event.
+  event.preventDefault();
+}
+
+//Addes event listeners for iPhone and some other mobile browsers
+function addTouchEvents() {
+  try { document.addEventListener("touchstart",  touchHandler, true); } catch(err) {  }
+  try { document.addEventListener("touchmove",   touchHandler, true); } catch(err) {  }
+  try { document.addEventListener("touchend",    touchHandler, true); } catch(err) {  }
+  try { document.addEventListener("touchcancel", touchHandler, true); } catch(err) {  }
+}
+
+//Checks if action needs to be done from keyboard input.
+function checkKeyboard() {
+  if (left && !right) { moveShipLeft(keyboardMoveSize);  }
+  if (right && !left) { moveShipRight(keyboardMoveSize); }
+  if (up) {
+    fireBullet(null);
+    up = false; //Prevents firing more than one. 
+  }
+  if (down) {}
+}
+
+//Setups event listeners and handlers for the keyboard.
+function setupKeyEvents() {
+  $(document).keydown(function (e) {
+    switch(e.keyCode)
     {
-       case "touchstart": 
-          type = "mousedown"; 
-		  $("#score2").text("touchstart " + d.getTime());
-          break;
-       case "touchmove":  
-	      type="mousemove"; 
-		  $("#score3").text("touchmove " + d.getTime());
-		  break;        
-       case "touchend":   
-          type="mouseup"; 
-		  $("#score4").text("touchend " + d.getTime());
-          //$("#score").text((d.getTime()-lastTouchStart.getTime())/(1000));
-          if (lastevent == "touchstart") {
-            type="click";
-            $("#score").text("CLICK");
-          }          
-          break;
-       default: 
-	      $("#score5").text(event.type + " " + d.getTime());
-	      return;
+       case 37:  left = true; break;
+       case 38: up = true; break;   
+       case 39: right = true; break;   
+       case 40: down = true; break;        
+       default: $("#score2").text(e.keyCode);
     }
-	lastevent = event.type;
-
-         //initMouseEvent(type, canBubble, cancelable, view, clickCount, 
-         //           screenX, screenY, clientX, clientY, ctrlKey, 
-        //           altKey, shiftKey, metaKey, button, relatedTarget);
-
-      var simulatedEvent = document.createEvent("MouseEvent");
-      simulatedEvent.initMouseEvent(type, true, true, window, 1, 
-                          first.screenX, first.screenY, 
-                          first.clientX, first.clientY, false, 
-                          false, false, false, 0/*left*/, null);
-
-first.target.dispatchEvent(simulatedEvent);
-   event.preventDefault();
+  });
+  $(document).keyup(function (e) {
+    switch(e.keyCode)
+    {
+       case 37:  left = false; break;
+       case 38: up = false; break;   
+       case 39: right = false; break;   
+       case 40: down = false; break;        
+       default: /*$("#score2").text(e.keyCode);*/
+    }
+  });
 }
 
-function touchInit() 
-{
-    document.addEventListener("touchstart", touchHandler, true);
-    document.addEventListener("touchmove", touchHandler, true);
-    document.addEventListener("touchend", touchHandler, true);
-    document.addEventListener("touchcancel", touchHandler, true);    
-}
